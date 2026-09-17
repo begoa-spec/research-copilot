@@ -1,0 +1,15 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Environment secrets — never commit real API keys
+.env
+
+# Node / frontend
+node_modules/
+research-copilot-frontend/dist/
+research-copilot-frontend/node_modules/
+
+# Editor
+.vscode/
