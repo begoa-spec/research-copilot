@@ -1,8 +1,7 @@
 import { useState, useRef } from "react";
 
-// Point this at your running backend. Change to your deployed Render/Railway
-// URL once the backend is hosted — keep localhost for local testing.
-const API_URL = "http://127.0.0.1:8000/research";
+// Point this at your running backend. Deployed on Render.
+const API_URL = "https://research-copilot-backend-vqq5.onrender.com/research";
 
 const SECTION_LABELS = {
   market_overview: "Market overview",
