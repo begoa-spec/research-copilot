@@ -43,6 +43,54 @@ nebius = OpenAI(
 )
 tavily = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 MODEL = os.environ.get("NEMOTRON_MODEL_ID", "nvidia/nemotron-4-340b-instruct")
+MOCK_MODE = os.environ.get("MOCK_MODE", "false").lower() == "true"
+
+MOCK_REPORT = {
+    "market_overview": (
+        "The target market shows steady demand growth, driven by rising internet "
+        "penetration and a young, digitally engaged population [1]. Local "
+        "spending power varies significantly by region, with urban centers "
+        "showing the strongest early adoption signals [2]."
+    ),
+    "competitive_landscape": (
+        "A handful of regional players currently dominate, with no single "
+        "company holding more than a third of market share [1]. International "
+        "entrants have historically struggled with localization, leaving room "
+        "for a well-adapted product [3]."
+    ),
+    "regulatory_and_entry_barriers": (
+        "Foreign entities generally face registration and local-partnership "
+        "requirements before operating [2]. Data protection rules have "
+        "tightened in the past two years, requiring careful compliance "
+        "planning before launch [4]."
+    ),
+    "risks_and_recommendations": (
+        "Currency volatility and payment infrastructure gaps are the most "
+        "cited operational risks [3]. Recommended entry approach: partner "
+        "with an established local distributor rather than a direct launch, "
+        "and pilot in a single urban market before expanding nationally [4]."
+    ),
+}
+
+
+async def run_mock_pipeline(query: str) -> AsyncGenerator[str, None]:
+    """Fake pipeline for UI/demo testing without real API keys."""
+    import asyncio
+
+    steps = [
+        "Planning research approach",
+        "Researching: market overview",
+        "Researching: competitive landscape",
+        "Researching: regulatory & entry barriers",
+        "Researching: risks & recommendations",
+        "Reading and filtering sources",
+        "Writing the report",
+    ]
+    for step in steps:
+        yield sse("step", {"stage": "mock", "message": step})
+        await asyncio.sleep(0.6)  # mimics real latency for a realistic demo feel
+
+    yield sse("done", {"query": query, "report": MOCK_REPORT})
 
 REPORT_SECTIONS = [
     "market_overview",
@@ -178,9 +226,11 @@ async def run_pipeline(query: str) -> AsyncGenerator[str, None]:
 
 @app.post("/research")
 async def research(req: ResearchRequest):
+    pipeline = run_mock_pipeline(req.query) if MOCK_MODE else run_pipeline(req.query)
+
     async def safe_pipeline():
         try:
-            async for event in run_pipeline(req.query):
+            async for event in pipeline:
                 yield event
         except Exception as exc:
             # Catch-all so an unanticipated error still reaches the frontend
